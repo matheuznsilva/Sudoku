@@ -1,0 +1,14 @@
++===========================================================+
+|                                                           |
+|                         INSTRUÇÕES                        |
+|                                                           |
+| Um quebra-cabecas de Sudoku comeca com uma tabela onde    |
+| alguns dos numeros ja estao no lugar, dependendo da       |
+| dificuldade do jogo.                                      |
+| Um quebra-cabecas completo eh aquele em que cada numeros  |
+| de 1 a 9 aparece apenas uma vez em cada uma das 9 linhas, |
+| colunas e blocos.                                         |
+| Estude a tabela para encontrar os numeros q podem caber   |
+| em cada celula.                                           |
+|                                                           |
++===========================================================+
