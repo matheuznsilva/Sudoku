@@ -37,9 +37,18 @@ E depois execute os seguintes comandos:
 
 ## Instruções
 
-Para joga é necessario escolher um modo de jogo (Pre-definido / carregar jogo) no pré-definido o jogo escolhe um quebra-cabeças aleatorio, no modo carregar jogo o 
-usuário deve colocar uma opção de quebra-cabeças (formato .txt)na pasta do jogo com o nome "meu_jogo". Apos escolher o modo de jogo será necessário escolher o nivel de dificuldade do jogo.
-Para preencher cada célula do quebra-cabeças deve-se colocar as coordenadas da celula (de A a I), Linha e depois Coluna, logo após aerá solicitado que digite o valor para preenchimento da célula. 
+Para jogar é necessario escolher um modo de jogo: **Pre-definido ou Carregar jogo**
+
+**pré-definido:** 
+A aplicação sorteia um quebra-cabeças aleatorio.
+
+**Carregar jogo**
+O jogador deve inserir um quebra-cabeças (formato .txt) na pasta do jogo com o nome "meu_jogo.txt".
+
+Apos escolher o modo de jogo será solicitado que o jogador escolha um nivel de dificuldade.
+
+Para preencher cada célula do quebra-cabeças deve-se colocar as coordenadas da celula (de A a I), Linha e depois Coluna, 
+logo após será solicitado que digite o valor para preenchimento da célula.
 
 ## Status do Projeto
 
