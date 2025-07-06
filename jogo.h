@@ -1,16 +1,15 @@
-#define TAM 9
-#define MAXIMO 3
+#ifndef JOGO_H
+#define JOGO_H
 
-void iniciar_jogo(int NIVEL, int A);
+#define TAMANHO_SUDOKU 9
+#define MAX_VALORES_ENTRADA 3
 
-void inicializarTabuleiro(int TAB[][TAM], int TAB1[][TAM], int TAB2[][TAM], int NIVEL, int A);
+void iniciar_novo_ou_carregar_jogo(int nivel_dificuldade, int tipo_jogo);
+void inicializar_tabuleiros(int tabuleiro_principal[][TAMANHO_SUDOKU], int tabuleiro_solucao[][TAMANHO_SUDOKU], int tabuleiro_fixo[][TAMANHO_SUDOKU], int nivel_dificuldade, int tipo_jogo);
+int obter_valores_entrada(int tabuleiro_principal[][TAMANHO_SUDOKU], int valores_entrada[MAX_VALORES_ENTRADA], int tabuleiro_fixo[][TAMANHO_SUDOKU]);
+void verificar_e_aplicar_jogada(int tabuleiro_principal[][TAMANHO_SUDOKU], int tabuleiro_fixo[][TAMANHO_SUDOKU], int valores_entrada[MAX_VALORES_ENTRADA]);
+int verificar_vitoria(int tabuleiro_principal[][TAMANHO_SUDOKU], int tabuleiro_solucao[][TAMANHO_SUDOKU]);
+int ler_caractere_coordenada();
+void imprimir_tabuleiro(int tabuleiro[][TAMANHO_SUDOKU]);
 
-int pegarValores(int VALOR[MAXIMO], int TAB[][TAM]);
-
-void confere(int TAB[][TAM], int TAB1[][TAM], int TAB2[][TAM], int VALOR[MAXIMO]);
-
-int compara(int TAB[][TAM], int TAB1[][TAM]);
-
-int coordenadas();
-
-void imprimir(int TAB[][TAM]);
+#endif /* JOGO_H */

@@ -1,14 +1,22 @@
-main:	main.o	funcoes.o	jogo.o
-	gcc main.o funcoes.o jogo.o -o main
+# List of source files
+SRCS = main.c funcoes.c jogo.c
+# List of header files
+HDRS = funcoes.h jogo.h
 
-main.o:	main.c
-	gcc -c main.c
+# Define the target executable
+TARGET = sudoku
 
-funcoes.o:	funcoes.c	funcoes.h
-	gcc -c funcoes.c
+# Compilation flags
+CFLAGS = -Wall -Wextra
 
-jogo.o:	jogo.c	jogo.h
-	gcc -c jogo.c
+# Build rule for the target executable
+$(TARGET): $(SRCS:.c=.o)
+	gcc $(CFLAGS) $^ -o $@
 
+# Build rule for source files
+%.o: %.c $(HDRS)
+	gcc $(CFLAGS) -c $< -o $@
+
+# Clean rule
 clean:
-	rm *.o
+	rm -f *.o $(TARGET)

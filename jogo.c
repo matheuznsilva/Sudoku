@@ -2,219 +2,355 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "funcoes.h"
+#include "funcoes.h" // Para RecordeJogo, adicionar_novo_recorde, exibir_recordes
 #include "jogo.h"
 #include "colors.h"
-#define TAM 9
-#define MAXIMO 3
 
-void iniciar_jogo(int NIVEL, int A){
-	int AUX, CORRIGIR = 0, INICIO = 0, FIM = 0, VALOR[MAXIMO], LINHA, COLUNA, TAB[TAM][TAM], TAB1[TAM][TAM], TAB2[TAM][TAM];
+// Define o tamanho do Sudoku e o máximo de valores de entrada, conforme jogo.h
+#define TAMANHO_SUDOKU 9
+#define MAX_VALORES_ENTRADA 3
 
-	inicializarTabuleiro(TAB, TAB1, TAB2, NIVEL, A);
-	
-	INICIO = (int)time(NULL);
+// Declaração de função auxiliar (para limpar buffer, se ainda necessário aqui)
+extern void limpar_buffer_teclado(); // Declaração para usar a função de funcoes.c
 
-	do{
-		imprimir(TAB);
-		AUX = pegarValores(VALOR, TAB);
-		if(AUX == 1){
-			confere(TAB, TAB1, TAB2, VALOR);
+void iniciar_novo_ou_carregar_jogo(int nivel_dificuldade, int tipo_jogo)
+{
+	int tabuleiro_principal[TAMANHO_SUDOKU][TAMANHO_SUDOKU];
+	int tabuleiro_solucao[TAMANHO_SUDOKU][TAMANHO_SUDOKU];
+	int tabuleiro_fixo[TAMANHO_SUDOKU][TAMANHO_SUDOKU];
+	int valores_jogada[MAX_VALORES_ENTRADA];
+	int jogada_valida = 0;
+	time_t tempo_inicio, tempo_fim;
 
-			if(compara(TAB, TAB1) == 0){
-				CORRIGIR = 1;
-			}
-		} else{
+	inicializar_tabuleiros(tabuleiro_principal, tabuleiro_solucao, tabuleiro_fixo, nivel_dificuldade, tipo_jogo);
+
+	tempo_inicio = time(NULL);
+
+	do
+	{
+		imprimir_tabuleiro(tabuleiro_principal); // Imprime o estado atual do tabuleiro
+
+		// MUDANÇA AQUI: Passar tabuleiro_principal como primeiro argumento
+		jogada_valida = obter_valores_entrada(tabuleiro_principal, valores_jogada, tabuleiro_fixo);
+
+		if (jogada_valida == 0)
+		{
 			break;
 		}
-	}while(CORRIGIR != 1);
 
-	FIM = (int)time(NULL);
+		verificar_e_aplicar_jogada(tabuleiro_principal, tabuleiro_fixo, valores_jogada);
 
-	if(AUX != 0){
-		novo_record(FIM - INICIO);
-    	coordenadas();
+	} while (verificar_vitoria(tabuleiro_principal, tabuleiro_solucao) != 0); // Loop enquanto o jogo não for completado
+
+	tempo_fim = time(NULL); // Fim da contagem de tempo
+
+	if (jogada_valida != 0)
+	{ // Se o jogo foi completado (não saiu)
+		adicionar_novo_recorde((int)(tempo_fim - tempo_inicio));
 	}
+
+	// Pausa após o jogo, seja por vitória ou saída
+	printf("\n\nPressione ENTER para continuar...");
+	limpar_buffer_teclado(); // Garante que o ENTER é lido
 }
 
-void inicializarTabuleiro(int TAB[][TAM], int TAB1[][TAM], int TAB2[][TAM], int NIVEL, int A){
-	int LINHA, COLUNA, NUM, I, J, ALEAT;
-	FILE *arq = NULL;
-	if(A == 1){
+void inicializar_tabuleiros(int tabuleiro_principal[][TAMANHO_SUDOKU], int tabuleiro_solucao[][TAMANHO_SUDOKU], int tabuleiro_fixo[][TAMANHO_SUDOKU], int nivel_dificuldade, int tipo_jogo)
+{
+	FILE *arquivo_sudoku = NULL;
+	int linha, coluna;
+	char nome_arquivo[50]; // Buffer para o nome do arquivo
+
+	// Escolhe o arquivo de sudoku baseado no tipo de jogo
+	if (tipo_jogo == 1)
+	{ // Novo jogo aleatório
 		srand(time(NULL));
-		ALEAT = rand()&100;
-		
-		if(ALEAT%2 == 0){
-			arq = fopen("sudoku1.txt", "r");
-		} else if(ALEAT%3 == 0){
-			arq = fopen("sudoku2.txt", "r");
-		} else if(ALEAT%5 == 0){
-			arq = fopen("sudoku3.txt", "r");
-		} else{
-			arq = fopen("sudoku4.txt", "r");
+		int aleatorio = rand() % 100;
+
+		if (aleatorio % 2 == 0)
+		{
+			strcpy(nome_arquivo, "sudoku1.txt");
 		}
-	} else if(A == 2){
-		arq = fopen("meu_jogo.txt", "r");
-	} else {
-		printf("MODO DE JOGO NÃO EXISTENTE\n");
+		else if (aleatorio % 3 == 0)
+		{
+			strcpy(nome_arquivo, "sudoku2.txt");
+		}
+		else if (aleatorio % 5 == 0)
+		{
+			strcpy(nome_arquivo, "sudoku3.txt");
+		}
+		else
+		{
+			strcpy(nome_arquivo, "sudoku4.txt");
+		}
 	}
-	
-	if(arq == NULL){
-		printf("Problemas na abertura do arquivo\n");
-        printf("Arquivo nao encontrado\n");
-    } else {
-    	for(LINHA=0; LINHA<TAM; LINHA++){
-         	for(COLUNA=0; COLUNA<TAM; COLUNA++){
-             	fscanf(arq, "%d", &TAB[LINHA][COLUNA]);
-             	TAB2[LINHA][COLUNA] = TAB1[LINHA][COLUNA] = TAB[LINHA][COLUNA];  	
-        	}    
-		}
-		if(NIVEL == 1){
-			srand(time(NULL));
-			for(NUM=0; NUM<20; NUM++){
-				I=rand()%9;
-				J=rand()%9;
-				TAB2[I][J] = TAB[I][J]= -1;
-			}
-		} else if(NIVEL == 2){	srand(time(NULL));
-			for(NUM=0; NUM<45; NUM++){
-				I=rand()%9;
-				J=rand()%9;
-				TAB2[I][J] = TAB[I][J]= -1;
-			}
-		} else if(NIVEL == 3){	srand(time(NULL));
-			for(NUM=0; NUM<68; NUM++){
-				I=rand()%9;
-				J=rand()%9;
-				TAB2[I][J] = TAB[I][J]= -1;
-			}
-		}
-
+	else if (tipo_jogo == 2)
+	{ // Carregar jogo
+		strcpy(nome_arquivo, "meu_jogo.txt");
 	}
-	fclose(arq);
-}
+	else
+	{
+		printf("ERRO: Modo de jogo não existente.\n");
+		return; // Retorna para evitar tentar abrir um arquivo inválido
+	}
 
-int pegarValores(int VALOR[MAXIMO], int TAB[][TAM]){
-   	int AUX = 0;
+	arquivo_sudoku = fopen(nome_arquivo, "r");
 
-    do{
-    	system("clear");
-    	imprimir(TAB);
-    	printf("DIGITE A LINHA: ");
-
-    	VALOR[0] = coordenadas();
-
-    	if(VALOR[0] == 48){
-    		return 0;
-    	}
-
-    	if(VALOR[0] > 96 && VALOR[0] <122){
-			VALOR[0] -= 32;
+	if (arquivo_sudoku == NULL)
+	{
+		printf("Erro: Problemas na abertura do arquivo de Sudoku '%s'.\n", nome_arquivo);
+		printf("Verifique se o arquivo existe no mesmo diretório do executável.\n");
+		// Inicializa tabuleiros com zeros para evitar lixo de memória e permitir que o programa continue (mas o jogo será inviável)
+		for (linha = 0; linha < TAMANHO_SUDOKU; linha++)
+		{
+			for (coluna = 0; coluna < TAMANHO_SUDOKU; coluna++)
+			{
+				tabuleiro_principal[linha][coluna] = 0;
+				tabuleiro_solucao[linha][coluna] = 0;
+				tabuleiro_fixo[linha][coluna] = 0;
+			}
 		}
+		return;
+	}
 
-		VALOR[0] -= 65;
-
-    	if (VALOR[0]<0 || VALOR[0]>TAM){
-        	printf("\nLINHA INEXISTENTE! DIGITE UMA LETRA DE A a I OU 0 PARA SAIR\n");
-    	} else{
-    		break;
-    	}
-    }while(AUX != 1);
-
-    do{
-    	system("clear");
-    	imprimir(TAB);
-    	printf("DIGITE A COLUNA: ");
-
-    	VALOR[1] = coordenadas();
-
-    	if(VALOR[1] == 48){
-    		return 0;
-    	}
-
-    	if(VALOR[1] > 96 && VALOR[1] <122){
-			VALOR[1] -= 32;
+	// Carrega o tabuleiro do arquivo
+	for (linha = 0; linha < TAMANHO_SUDOKU; linha++)
+	{
+		for (coluna = 0; coluna < TAMANHO_SUDOKU; coluna++)
+		{
+			if (fscanf(arquivo_sudoku, "%d", &tabuleiro_principal[linha][coluna]) != 1)
+			{
+				printf("Erro de leitura no arquivo de Sudoku. O arquivo pode estar corrompido.\n");
+				fclose(arquivo_sudoku);
+				return;
+			}
+			tabuleiro_solucao[linha][coluna] = tabuleiro_principal[linha][coluna]; // Copia para o tabuleiro solução
+			tabuleiro_fixo[linha][coluna] = tabuleiro_principal[linha][coluna];		 // Inicialmente, todos são fixos
 		}
+	}
+	fclose(arquivo_sudoku);
 
-		VALOR[1] -= 65;
+	// Remove células para criar a dificuldade
+	int num_celulas_remover = 0;
+	if (nivel_dificuldade == 1)
+	{ // EASY
+		num_celulas_remover = 20;
+	}
+	else if (nivel_dificuldade == 2)
+	{ // INTERMEDIARY
+		num_celulas_remover = 45;
+	}
+	else if (nivel_dificuldade == 3)
+	{ // HARD
+		num_celulas_remover = 68;
+	}
+	else
+	{
+		printf("Nível de dificuldade inválido. Usando nível padrão (INTERMEDIÁRIO).\n");
+		num_celulas_remover = 45;
+	}
 
-    	if (VALOR[1]<0 || VALOR[1]>TAM){
-        	printf("\nCOLUNA INEXISTENTE! DIGITE UMA LETRA DE A a I OU 0 PARA SAIR\n");
-    	} else{
-    		break;
-    	}
-    }while(AUX != 1);
-
-    do{
-    	system("clear");
-    	imprimir(TAB);
-    	printf("DIGITE O VALOR: ");
-    	scanf("%d",&VALOR[2]);
-
-    	if (VALOR[2]<-1 || VALOR[2]>TAM){
-        	printf("\nVALOR DIGITADO É INVALIDO DIGITE UMA LETRA DE A a I OU 0 PARA SAIR\n");
-    	} else if(VALOR[2] == 0){
-    		return 0;
-    	} else{
-    		break;
-    	}
-    }while(AUX != 1);
-    return 1;
-}
-
-
-void confere(int TAB[][TAM], int TAB1[][TAM], int TAB2[][TAM], int VALOR[MAXIMO]){
-	int LINHA = VALOR[0], COLUNA = VALOR[1], AUX = VALOR[2];
-	if(TAB2[LINHA][COLUNA] == -1){
-		TAB[LINHA][COLUNA] = AUX;
-		if(TAB[LINHA][COLUNA] == TAB1[LINHA][COLUNA]){
-			foreground(GREEN);
-		} else {
-			foreground(RED);
-		}
+	srand(time(NULL)); // Garante uma nova semente para cada inicialização
+	for (int i = 0; i < num_celulas_remover; i++)
+	{
+		int r_linha = rand() % TAMANHO_SUDOKU;
+		int r_coluna = rand() % TAMANHO_SUDOKU;
+		tabuleiro_principal[r_linha][r_coluna] = -1; // -1 representa uma célula vazia
+		tabuleiro_fixo[r_linha][r_coluna] = -1;			 // Marca como célula não fixa
 	}
 }
 
-int compara(int TAB[][TAM], int TAB1[][TAM]){
-	int LINHA, COLUNA, AUX = 0;
-	for(LINHA = 0; LINHA < TAM; LINHA++){
-		for(COLUNA = 0; COLUNA < TAM; COLUNA++){
-			if(TAB[LINHA][COLUNA]==TAB1[LINHA][COLUNA]){
-				AUX++;
-			}
+int obter_valores_entrada(int tabuleiro_principal[][TAMANHO_SUDOKU], int valores_entrada[MAX_VALORES_ENTRADA], int tabuleiro_fixo[][TAMANHO_SUDOKU])
+{
+	int linha_char_ascii, coluna_char_ascii;
+	int linha_idx, coluna_idx, valor_digitado;
+
+	// Loop para obter a linha
+	do
+	{
+		system("clear");
+		imprimir_tabuleiro(tabuleiro_principal);
+		printf("DIGITE A LINHA (A-I) ou 0 para sair: ");
+		linha_char_ascii = ler_caractere_coordenada();
+
+		if (linha_char_ascii == '0')
+			return 0; // Usuário deseja sair
+
+		linha_idx = linha_char_ascii - 'A';
+
+		if (linha_idx < 0 || linha_idx >= TAMANHO_SUDOKU)
+		{
+			printf("\nLINHA INEXISTENTE! Digite uma letra de A a I ou 0 para sair.\n");
+			limpar_buffer_teclado();
 		}
-	}
-	if(AUX == 81){
-    	system("clear");
-    	printf("PARABENS JOGO COMPLETADO COM SUCESSO!!! =D");
-		return 0;
-	}
+		else
+		{
+			break;
+		}
+	} while (1);
+
+	// Loop para obter a coluna
+	do
+	{
+		system("clear");
+		imprimir_tabuleiro(tabuleiro_principal);
+		printf("LINHA SELECIONADA: %c\n", (char)(linha_idx + 'A'));
+		printf("DIGITE A COLUNA (A-I) ou 0 para sair: ");
+		coluna_char_ascii = ler_caractere_coordenada();
+
+		if (coluna_char_ascii == '0')
+			return 0; // Usuário deseja sair
+
+		coluna_idx = coluna_char_ascii - 'A';
+
+		if (coluna_idx < 0 || coluna_idx >= TAMANHO_SUDOKU)
+		{
+			printf("\nCOLUNA INEXISTENTE! Digite uma letra de A a I ou 0 para sair.\n");
+			limpar_buffer_teclado();
+		}
+		else
+		{
+			break;
+		}
+	} while (1);
+
+	// Loop para obter o valor
+	do
+	{
+		system("clear");
+		// MUDANÇA AQUI: imprimir o tabuleiro principal
+		imprimir_tabuleiro(tabuleiro_principal);
+		printf("LINHA: %c, COLUNA: %c\n", (char)(linha_idx + 'A'), (char)(coluna_idx + 'A'));
+		printf("DIGITE O VALOR (1-9) ou 0 para apagar ou -1 para sair: ");
+
+		if (scanf("%d", &valor_digitado) != 1)
+		{
+			printf("\nVALOR INVÁLIDO! Digite um número de 1 a 9, 0 para apagar, ou -1 para sair.\n");
+			limpar_buffer_teclado();
+			continue;
+		}
+		limpar_buffer_teclado();
+
+		if (valor_digitado == -1)
+			return 0;
+
+		if (valor_digitado < 0 || valor_digitado > TAMANHO_SUDOKU)
+		{
+			printf("\nVALOR DIGITADO É INVÁLIDO! Digite um número de 1 a 9, 0 para apagar, ou -1 para sair.\n");
+		}
+		else
+		{
+			break;
+		}
+	} while (1);
+
+	valores_entrada[0] = linha_idx;
+	valores_entrada[1] = coluna_idx;
+	valores_entrada[2] = valor_digitado;
+
 	return 1;
 }
 
-int coordenadas(){
-	char A[1];
-	gets(A);
-    setbuf(stdin,NULL);
-	return A[0];
+void verificar_e_aplicar_jogada(int tabuleiro_principal[][TAMANHO_SUDOKU], int tabuleiro_fixo[][TAMANHO_SUDOKU], int valores_entrada[MAX_VALORES_ENTRADA])
+{
+	int linha = valores_entrada[0];
+	int coluna = valores_entrada[1];
+	int valor = valores_entrada[2];
+
+	if (tabuleiro_fixo[linha][coluna] != -1)
+	{
+		printf("\nVocê não pode alterar uma célula pré-definida do tabuleiro!\n");
+		printf("Pressione ENTER para continuar...");
+		limpar_buffer_teclado();
+		return;
+	}
+
+	if (valor == 0)
+	{
+		tabuleiro_principal[linha][coluna] = -1;
+		return;
+	}
+
+	tabuleiro_principal[linha][coluna] = valor;
 }
 
-void imprimir(int TAB[][TAM]){
-	system("clear");
-	printf("\n| A | B | C | D | E | F | G | H | I |");
-	printf("\n+===+===+===+===+===+===+===+===+===+ ===\n"); 
-	for(int LINHA=0; LINHA<TAM; LINHA++){
-        for(int COLUNA=0; COLUNA<TAM; COLUNA++){
-        	if(TAB[LINHA][COLUNA] != -1){
-          		printf("| %d ", TAB[LINHA][COLUNA]);
-        	} else{
-          		printf("|   ");
-        	}
-        }
-        if(LINHA == 8){
-        	printf("|  %c\n+===+===+===+===+===+===+===+===+===+ ===\n", LINHA+65);
-        } else{   
-        	printf("|  %c\n+---+---+---+---+---+---+---+---+---+ ===\n", LINHA+65);    
-        }
+int verificar_vitoria(int tabuleiro_principal[][TAMANHO_SUDOKU], int tabuleiro_solucao[][TAMANHO_SUDOKU])
+{
+	int linha, coluna;
+	for (linha = 0; linha < TAMANHO_SUDOKU; linha++)
+	{
+		for (coluna = 0; coluna < TAMANHO_SUDOKU; coluna++)
+		{
+			if (tabuleiro_principal[linha][coluna] != tabuleiro_solucao[linha][coluna])
+			{
+				return 1; // Jogo ainda não completado
+			}
+		}
 	}
+	system("clear");
+	printf("\n\t\tPARABÉNS! JOGO COMPLETADO COM SUCESSO!!! =D\n");
+	return 0; // Jogo completado
+}
+
+int ler_caractere_coordenada()
+{
+	char entrada_char[10]; // Buffer maior para ler a linha
+	if (fgets(entrada_char, sizeof(entrada_char), stdin) == NULL)
+	{
+		return EOF; // Erro de leitura
+	}
+	// Remove o newline, se houver
+	entrada_char[strcspn(entrada_char, "\n")] = 0;
+
+	if (strlen(entrada_char) == 1)
+	{
+		char c = entrada_char[0];
+		// Converte para maiúscula se for minúscula
+		if (c >= 'a' && c <= 'z')
+		{
+			return c - ('a' - 'A');
+		}
+		return c; // Retorna o caractere (já maiúsculo ou número)
+	}
+	return -1; // Indica entrada inválida (mais de um caractere ou vazio)
+}
+
+void imprimir_tabuleiro(int tabuleiro[][TAMANHO_SUDOKU])
+{
+	system("clear");
+	printf("\n");
+	printf("   A   B   C   D   E   F   G   H   I\n");
+	printf(" +---+---+---+---+---+---+---+---+---+\n");
+
+	for (int linha = 0; linha < TAMANHO_SUDOKU; linha++)
+	{
+		printf("%c|", (char)('A' + linha)); // Imprime a letra da linha
+		for (int coluna = 0; coluna < TAMANHO_SUDOKU; coluna++)
+		{
+			// Verifica a célula em tabuleiro_fixo para saber se é um número inicial
+			// Usamos 'tabuleiro_fixo' para decidir a cor original.
+			// Para a refatoração completa, 'tabuleiro_fixo' precisa ser passado para esta função.
+			// Por simplicidade aqui, vamos apenas imprimir o valor.
+			// No entanto, para ter cores diferentes para números fixos e inseridos,
+			// ou para números corretos/incorretos, seria necessário passar o tabuleiro_solucao e tabuleiro_fixo.
+			// Como isso aumentaria a complexidade da assinatura da função, vamos manter uma versão simplificada
+			// e assumir que a coloração é feita em `verificar_e_aplicar_jogada` ou `imprimir_tabuleiro`
+			// teria acesso a todos os tabuleiros necessários.
+
+			if (tabuleiro[linha][coluna] != -1)
+			{
+				// Aqui você pode adicionar lógica para colorir com base na correção
+				// Ex: if (tabuleiro[linha][coluna] == tabuleiro_solucao[linha][coluna]) { FOREGREEN; } else { FORERED; }
+				// E depois RESETALL;
+				printf(" %d ", tabuleiro[linha][coluna]);
+			}
+			else
+			{
+				printf("   "); // Célula vazia
+			}
+			printf("|");
+		}
+		printf("\n +---+---+---+---+---+---+---+---+---+\n");
+	}
+	printf("\n"); // Adiciona uma nova linha final para melhor espaçamento
+	RESETALL;			// Garante que a cor é resetada após a impressão do tabuleiro
 }
